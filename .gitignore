@@ -1,0 +1,6 @@
+migrations
+venv
+.mypy_cache
+__pycache__/
+*.pyc
+structural.txt
