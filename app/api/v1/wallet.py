@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException, status
-from pydantic import ValidationError
+from decimal import Decimal
+from uuid import UUID
 
 from api.schemas.schemas import WalletOperations
 from api.service.exceptions import (InsufficientFundsError, InvalidAmountError,
@@ -8,15 +8,17 @@ from api.service.exceptions import (InsufficientFundsError, InvalidAmountError,
 from api.service.wallet import (add_or_remove_money, create_new_wallet,
                                 get_wallet_balance)
 from db.database import SessionDep
-from db.models import Wallet
+from fastapi import APIRouter, HTTPException, status
+from pydantic import ValidationError
 
 router = APIRouter()
 
 
-@router.post('/{wallet_uuid}/create')
-async def create_wallet(wallet_uuid: int, db: SessionDep) -> Wallet:
+@router.post('/{wallet_uuid}/create', status_code=status.HTTP_201_CREATED)
+async def create_wallet(wallet_uuid: UUID, db: SessionDep) -> str:
     try:
-        return await create_new_wallet(wallet_uuid, db)
+        await create_new_wallet(wallet_uuid, db)
+        return ('Success')
 
     except (ValidationError, ValueError):
         raise HTTPException(
@@ -38,10 +40,12 @@ async def create_wallet(wallet_uuid: int, db: SessionDep) -> Wallet:
 
 
 @router.post(
-    '/{wallet_uuid}/operation',
-    status_code=status.HTTP_200_OK,
-)
-async def income_or_expence(wallet_uuid: int, payload: WalletOperations, db: SessionDep) -> Wallet:
+    '/{wallet_uuid}/operation', status_code=status.HTTP_200_OK)
+async def income_or_expence(
+    wallet_uuid: UUID,
+    payload: WalletOperations,
+    db: SessionDep
+) -> Decimal:
     try:
         return await add_or_remove_money(wallet_uuid, payload, db)
 
@@ -64,8 +68,8 @@ async def income_or_expence(wallet_uuid: int, payload: WalletOperations, db: Ses
         )
 
 
-@router.get('/{wallet_uuid}')
-async def get_wallet(wallet_uuid: int, db: SessionDep) -> Wallet:
+@router.get('/{wallet_uuid}', status_code=status.HTTP_200_OK)
+async def get_balance(wallet_uuid: UUID, db: SessionDep) -> Decimal:
     try:
         return await get_wallet_balance(wallet_uuid, db)
 

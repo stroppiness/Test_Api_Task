@@ -1,18 +1,18 @@
 from decimal import Decimal
-
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from uuid import UUID
 
 from api.repository.wallet import (create_wallet_by_id, get_wallet_by_id,
                                    save_wallet)
+from api.schemas.schemas import WalletOperations
 from api.service.exceptions import (InsufficientFundsError, InvalidAmountError,
                                     WalletAlreadyExistsError,
                                     WalletNotFoundError, WalletSaveError)
 from db.database import SessionDep
 from db.models import Wallet
-from api.schemas.schemas import WalletOperations
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 
-async def create_new_wallet(wallet_id: int, db: SessionDep) -> Wallet:
+async def create_new_wallet(wallet_id: UUID, db: SessionDep) -> Wallet:
     try:
         return await create_wallet_by_id(wallet_id, db)
 
@@ -23,7 +23,7 @@ async def create_new_wallet(wallet_id: int, db: SessionDep) -> Wallet:
         raise WalletSaveError
 
 
-async def get_wallet_balance(wallet_id: int, db: SessionDep) -> Decimal:
+async def get_wallet_balance(wallet_id: UUID, db: SessionDep) -> Decimal:
     wallet = await get_wallet_by_id(wallet_id, db)
 
     if not wallet:
@@ -34,7 +34,11 @@ async def get_wallet_balance(wallet_id: int, db: SessionDep) -> Decimal:
     return balance
 
 
-async def add_or_remove_money(wallet_id: int, payload: WalletOperations, db: SessionDep) -> Wallet:
+async def add_or_remove_money(
+    wallet_id: UUID,
+    payload: WalletOperations,
+    db: SessionDep
+) -> Decimal:
     amount = payload.amount
     if amount <= 0:
         raise InvalidAmountError
@@ -44,10 +48,10 @@ async def add_or_remove_money(wallet_id: int, payload: WalletOperations, db: Ses
     if not wallet:
         raise WalletNotFoundError
 
-    if payload.operation_type == "DEPOSIT":
+    if payload.operation_type == 'DEPOSIT':
         wallet.balance += amount
-        await save_wallet(db, wallet)
-        return wallet
+        await save_wallet(wallet, db)
+        return wallet.balance
 
     if payload.operation_type == 'WITHDRAW':
         if wallet.balance < amount:
@@ -55,4 +59,4 @@ async def add_or_remove_money(wallet_id: int, payload: WalletOperations, db: Ses
 
         wallet.balance -= amount
         await save_wallet(wallet, db)
-        return wallet
+        return wallet.balance

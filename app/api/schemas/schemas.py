@@ -1,13 +1,13 @@
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class WalletOperations(BaseModel):
     operation_type: Literal['DEPOSIT', 'WITHDRAW'] = Field(
         ...,
-        examples=['DEPOSIT or WITHDRAW'],
+        examples=['DEPOSIT'],
     )
     amount: Decimal = Field(
         ...,

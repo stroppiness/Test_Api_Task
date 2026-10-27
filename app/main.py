@@ -1,6 +1,5 @@
-from fastapi import FastAPI
-
 from api.v1.wallet import router as wallet_router
+from fastapi import FastAPI
 
 app = FastAPI()
 
